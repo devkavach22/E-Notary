@@ -1,134 +1,266 @@
+import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { logout } from '../store/slices/authSlice'
+import { fetchAdvocates, fetchPracticeAreas, fetchAdvocateTemplates, resetTemplates, fillTemplate, downloadTemplate } from '../store/slices/advocateSlice'
 
-const menuItems = [
-  { icon: '📄', label: 'My Documents', desc: 'View and manage your notarized documents' },
-  { icon: '✍️', label: 'New Notarization', desc: 'Start a new document notarization request' },
-  { icon: '📋', label: 'Pending Requests', desc: 'Track your pending notarization requests' },
-  { icon: '✅', label: 'Completed', desc: 'View all completed notarizations' },
-]
+import Sidebar from '../components/layout/Sidebar'
+import Topbar from '../components/layout/Topbar'
+import WelcomeBanner from '../components/dashboard/WelcomeBanner'
+import StatsGrid from '../components/dashboard/StatsGrid'
+import QuickActions from '../components/dashboard/QuickActions'
+import AdvocateList from '../components/advocates/AdvocateList'
+import TemplateList from '../components/templates/TemplateList'
+import TemplateForm from '../components/templates/TemplateForm'
+import StampDocument from '../components/templates/StampDocument'
+import ProfileCard from '../components/profile/ProfileCard'
+import MyBookings from './MyBookings'
+import BookingDetail from './BookingDetail'
+import UploadCaseDocs from './UploadCaseDocs'
+import MyCases from './MyCases'
+import CaseDetail from './CaseDetail'
+import Notifications from './Notifications'
+
+const USER_FIELD_MAP = {
+  'full name': 'fullName', 'name': 'fullName',
+  "father's / husband's name": null,
+  'date of birth': 'dateOfBirth', 'dob': 'dateOfBirth',
+  'address': 'address', 'aadhaar number': 'aadhaarNumber', 'aadhaar': 'aadhaarNumber',
+  'pan number': 'panNumber', 'pan': 'panNumber',
+  'email': 'email', 'mobile': 'mobile', 'mobile number': 'mobile', 'phone': 'mobile',
+  'city': 'city', 'state': 'state', 'pincode': 'pincode', 'gender': 'gender',
+}
+
+const getAutoValue = (fieldName, userData) => {
+  const key = USER_FIELD_MAP[fieldName.toLowerCase()]
+  if (!key || !userData?.[key]) return ''
+  const val = userData[key]
+  if (key === 'dateOfBirth' && val) return val.split('T')[0]
+  return val
+}
 
 export default function Dashboard() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const user = useSelector((s) => s.auth.user)
+  const { advocates, total, fetchStatus, fetchError, practiceGroups, templates, templatesMeta, templatesStatus, templatesError, fillStatus, downloadStatus, submissionId, submissionStatus } = useSelector((s) => s.advocate)
 
-  const handleLogout = () => {
-    dispatch(logout())
-    navigate('/login')
+  const [activeNav, setActiveNav] = useState('dashboard')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [caseType, setCaseType] = useState('')
+  const [category, setCategory] = useState('')
+  const [selectedTemplate, setSelectedTemplate] = useState(null)
+  const [formValues, setFormValues] = useState({})
+  const [formErrors, setFormErrors] = useState({})
+  const [selectedBookingId, setSelectedBookingId] = useState(null)
+  const [selectedCaseId, setSelectedCaseId] = useState(null)
+
+  const categoryOptions = practiceGroups.find((g) => g.group === caseType)?.areas ?? []
+
+  useEffect(() => { dispatch(fetchPracticeAreas()) }, [])
+
+  useEffect(() => {
+    if (activeNav === 'advocates' && (caseType || category)) {
+      dispatch(fetchAdvocates({ caseType, category }))
+    }
+  }, [activeNav, caseType, category])
+
+  const openTemplates = (adv) => {
+    dispatch(fetchAdvocateTemplates({ advocateId: adv._id, practiceArea: caseType, category }))
+    setActiveNav('templates')
   }
+
+  const closeTemplates = () => {
+    setSelectedTemplate(null)
+    setFormValues({})
+    setFormErrors({})
+    dispatch(resetTemplates())
+    setActiveNav('advocates')
+  }
+
+  const openTemplateForm = (tpl) => {
+    const initial = {}
+    tpl.fields.forEach((f) => {
+      initial[f.fieldName] = getAutoValue(f.fieldName, templatesMeta.userData)
+    })
+    setFormValues(initial)
+    setFormErrors({})
+    setSelectedTemplate(tpl)
+    setActiveNav('form')
+  }
+
+  const closeTemplateForm = () => {
+    setSelectedTemplate(null)
+    setFormValues({})
+    setFormErrors({})
+    setActiveNav('templates')
+  }
+
+  const handleFieldChange = (fieldName, value) => {
+    setFormValues((prev) => ({ ...prev, [fieldName]: value }))
+    setFormErrors((prev) => ({ ...prev, [fieldName]: '' }))
+  }
+
+  const handleFormSubmit = (e) => {
+    e.preventDefault()
+    const errs = {}
+    selectedTemplate.fields.forEach((f) => {
+      if (f.required && !formValues[f.fieldName]?.toString().trim()) {
+        errs[f.fieldName] = `${f.fieldName} is required`
+      }
+    })
+    if (Object.keys(errs).length) { setFormErrors(errs); return }
+    const filledFields = selectedTemplate.fields.map((f) => ({
+      fieldName: f.fieldName,
+      ...(f.fieldType === 'image' ? { fieldType: 'image' } : {}),
+      value: formValues[f.fieldName] ?? '',
+    }))
+    dispatch(fillTemplate({ templateId: selectedTemplate._id, filledFields })).then(res => {
+      if (fillTemplate.fulfilled.match(res)) setActiveNav('stamp')
+    })
+  }
+
+  const handleLogout = () => { dispatch(logout()); navigate('/login') }
+
+  const handleViewBooking = (id) => { setSelectedBookingId(id); setActiveNav('booking-detail') }
+  const handleViewCase = (id) => { setSelectedCaseId(id); setActiveNav('case-detail') }
 
   const displayName = user?.fullName || user?.name || user?.email || 'User'
   const initials = displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
 
+ 
+  
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navbar */}
-      <nav className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <span className="text-lg font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              E-Notary
-            </span>
-          </div>
+    <div className="h-screen bg-transparent flex overflow-hidden">
+      {sidebarOpen && (
+        <div className="fixed inset-0 bg-black/40 z-20 lg:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
 
-          <div className="flex items-center gap-3">
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-semibold text-gray-800">{displayName}</p>
-              <p className="text-xs text-gray-400">{user?.email || ''}</p>
-            </div>
-            <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-              {initials}
-            </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-500 border border-gray-200 hover:border-red-200 px-3 py-1.5 rounded-lg transition-all"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              Logout
-            </button>
-          </div>
-        </div>
-      </nav>
+      <Sidebar
+        activeNav={activeNav}
+        setActiveNav={setActiveNav}
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        user={user}
+        displayName={displayName}
+        initials={initials}
+        onLogout={handleLogout}
+      />
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Welcome Banner */}
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-6 mb-8 text-white shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-indigo-200 text-sm font-medium mb-1">Welcome back 👋</p>
-              <h1 className="text-2xl font-bold">{displayName}</h1>
-              <p className="text-indigo-200 text-sm mt-1">Manage your digital notarizations securely</p>
-            </div>
-            <div className="hidden sm:flex w-16 h-16 bg-white/20 rounded-2xl items-center justify-center text-3xl">
-              📜
-            </div>
-          </div>
-        </div>
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+        <Topbar
+          activeNav={activeNav}
+          setSidebarOpen={setSidebarOpen}
+          selectedTemplate={selectedTemplate}
+          displayName={displayName}
+          initials={initials}
+          onNavigate={setActiveNav}
+        />
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          {[
-            { label: 'Total Documents', value: '0', color: 'text-indigo-600', bg: 'bg-indigo-50' },
-            { label: 'Pending', value: '0', color: 'text-yellow-600', bg: 'bg-yellow-50' },
-            { label: 'Completed', value: '0', color: 'text-green-600', bg: 'bg-green-50' },
-            { label: 'Rejected', value: '0', color: 'text-red-600', bg: 'bg-red-50' },
-          ].map((stat) => (
-            <div key={stat.label} className={`${stat.bg} rounded-xl p-4`}>
-              <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{stat.label}</p>
-            </div>
-          ))}
-        </div>
+        <main className="flex-1 p-4 lg:p-6 overflow-y-auto bg-transparent">
 
-        {/* Quick Actions */}
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {menuItems.map((item) => (
-            <div
-              key={item.label}
-              className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-indigo-200 cursor-pointer transition-all duration-200 flex items-start gap-4"
-            >
-              <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-2xl shrink-0">
-                {item.icon}
-              </div>
-              <div>
-                <p className="font-semibold text-gray-800 text-sm">{item.label}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{item.desc}</p>
-              </div>
+          {activeNav === 'dashboard' && (
+            <div className="space-y-6">
+              <WelcomeBanner displayName={displayName} />
+              <StatsGrid />
+              <QuickActions onNavigate={setActiveNav} />
             </div>
-          ))}
-        </div>
+          )}
 
-        {/* Profile Info */}
-        {user && (
-          <div className="mt-8 bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-            <h2 className="text-sm font-semibold text-gray-700 mb-4">Your Profile</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {[
-                ['Full Name', user.fullName || user.name],
-                ['Email', user.email],
-                ['Mobile', user.mobile],
-                ['Aadhaar', user.aadhaarNumber ? `****${user.aadhaarNumber.slice(-4)}` : '—'],
-                ['PAN', user.panNumber || '—'],
-                ['City', user.city || '—'],
-              ].map(([label, value]) => value ? (
-                <div key={label}>
-                  <p className="text-xs text-gray-400">{label}</p>
-                  <p className="text-sm font-medium text-gray-700 mt-0.5 truncate">{value}</p>
-                </div>
-              ) : null)}
-            </div>
-          </div>
-        )}
+          {activeNav === 'advocates' && (
+            <AdvocateList
+              advocates={advocates}
+              total={total}
+              fetchStatus={fetchStatus}
+              fetchError={fetchError}
+              caseType={caseType}
+              setCaseType={setCaseType}
+              category={category}
+              setCategory={setCategory}
+              practiceGroups={practiceGroups}
+              categoryOptions={categoryOptions}
+              onBook={openTemplates}
+            />
+          )}
+
+          {activeNav === 'templates' && (
+            <TemplateList
+              templates={templates}
+              templatesMeta={templatesMeta}
+              templatesStatus={templatesStatus}
+              templatesError={templatesError}
+              onBack={closeTemplates}
+              onSelect={openTemplateForm}
+            />
+          )}
+
+          {activeNav === 'form' && selectedTemplate && (
+            <TemplateForm
+              selectedTemplate={selectedTemplate}
+              formValues={formValues}
+              formErrors={formErrors}
+              fillStatus={fillStatus}
+              onBack={closeTemplateForm}
+              onChange={handleFieldChange}
+              onSubmit={handleFormSubmit}
+              getAutoValue={getAutoValue}
+              userData={templatesMeta.userData}
+            />
+          )}
+
+          {activeNav === 'stamp' && selectedTemplate && (
+            <StampDocument
+              selectedTemplate={selectedTemplate}
+              formValues={formValues}
+              templatesMeta={templatesMeta}
+              onEditForm={() => setActiveNav('form')}
+              onDownload={() => dispatch(downloadTemplate(selectedTemplate._id))}
+              downloadStatus={downloadStatus}
+              submissionId={submissionId}
+              submissionStatus={submissionStatus}
+            />
+          )}
+
+          {activeNav === 'bookings' && (
+            <MyBookings onViewBooking={handleViewBooking} />
+          )}
+
+          {activeNav === 'booking-detail' && selectedBookingId && (
+            <BookingDetail
+              bookingId={selectedBookingId}
+              onBack={() => setActiveNav('bookings')}
+              onUploadDocs={() => setActiveNav('upload-case-docs')}
+            />
+          )}
+
+          {activeNav === 'upload-case-docs' && selectedBookingId && (
+            <UploadCaseDocs
+              bookingId={selectedBookingId}
+              onBack={() => setActiveNav('booking-detail')}
+            />
+          )}
+
+          {activeNav === 'cases' && (
+            <MyCases onViewCase={handleViewCase} />
+          )}
+
+          {activeNav === 'case-detail' && selectedCaseId && (
+            <CaseDetail
+              caseId={selectedCaseId}
+              onBack={() => setActiveNav('cases')}
+            />
+          )}
+
+          {activeNav === 'notifications' && (
+            <Notifications onViewCase={(id) => { setSelectedCaseId(id); setActiveNav('case-detail') }} />
+          )}
+
+          {activeNav === 'profile' && user && (
+            <ProfileCard user={user} displayName={displayName} initials={initials} />
+          )}
+
+        </main>
       </div>
     </div>
   )

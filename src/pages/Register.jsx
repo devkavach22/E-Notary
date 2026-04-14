@@ -134,12 +134,12 @@ export default function Register() {
   return (
     <AuthLayout step={5} totalSteps={5} title="Complete Registration" subtitle="Fill in your personal details to create your account.">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="First Name" name="firstName" placeholder="John" half />
           <Field label="Last Name / Surname" name="lastName" placeholder="Doe" half />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
             <input type="email" name="email" value={form.email} onChange={handle} placeholder="you@example.com"
@@ -155,7 +155,7 @@ export default function Register() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Date of Birth" name="dob" type="date" half />
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Gender</label>
@@ -170,7 +170,7 @@ export default function Register() {
 
         <Field label="Address" name="address" placeholder="Street address, Area" />
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[['City','city','Mumbai'],['State','state','Maharashtra'],['Pincode','pincode','400001']].map(([label,name,ph]) => (
             <div key={name}>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
@@ -191,7 +191,7 @@ export default function Register() {
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
               Aadhaar Number
@@ -214,7 +214,7 @@ export default function Register() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
             <div className="relative">

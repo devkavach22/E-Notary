@@ -9,7 +9,44 @@
 body {
   margin: 0;
   font-family: 'Inter', system-ui, sans-serif;
-  background: #f8fafc;
+  background: #f0f2ff;
+}
+
+/* Base dot grid */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-color: #f0f2ff;
+  background-image:
+    radial-gradient(circle, rgba(99,102,241,0.18) 1.2px, transparent 1.2px);
+  background-size: 28px 28px;
+}
+
+/* Glows + decorative shapes on top of dots */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    /* top-left glow */
+    radial-gradient(ellipse 55% 40% at 5% 5%, rgba(99,102,241,0.13) 0%, transparent 70%),
+    /* bottom-right glow */
+    radial-gradient(ellipse 55% 40% at 95% 95%, rgba(168,85,247,0.12) 0%, transparent 70%),
+    /* center soft glow */
+    radial-gradient(ellipse 40% 30% at 50% 50%, rgba(139,92,246,0.06) 0%, transparent 70%),
+    /* decorative large circle top-right */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Ccircle cx='92%25' cy='8%25' r='180' fill='none' stroke='%236366f1' stroke-width='1' stroke-opacity='0.08'/%3E%3Ccircle cx='92%25' cy='8%25' r='120' fill='none' stroke='%236366f1' stroke-width='1' stroke-opacity='0.06'/%3E%3Ccircle cx='92%25' cy='8%25' r='60' fill='none' stroke='%236366f1' stroke-width='1' stroke-opacity='0.05'/%3E%3C!-- bottom-left rings --%3E%3Ccircle cx='6%25' cy='92%25' r='160' fill='none' stroke='%23a855f7' stroke-width='1' stroke-opacity='0.07'/%3E%3Ccircle cx='6%25' cy='92%25' r='100' fill='none' stroke='%23a855f7' stroke-width='1' stroke-opacity='0.05'/%3E%3C!-- diagonal line accents --%3E%3Cline x1='0' y1='0' x2='100%25' y2='100%25' stroke='%236366f1' stroke-width='0.5' stroke-opacity='0.04'/%3E%3Cline x1='100%25' y1='0' x2='0' y2='100%25' stroke='%236366f1' stroke-width='0.5' stroke-opacity='0.04'/%3E%3C!-- small decorative diamonds --%3E%3Crect x='48%25' y='2%25' width='12' height='12' rx='2' fill='none' stroke='%236366f1' stroke-width='1.2' stroke-opacity='0.12' transform='rotate(45 48 2)'/%3E%3Crect x='20%25' y='50%25' width='10' height='10' rx='1' fill='none' stroke='%23a855f7' stroke-width='1' stroke-opacity='0.10' transform='rotate(45 20 50)'/%3E%3Crect x='78%25' y='60%25' width='10' height='10' rx='1' fill='none' stroke='%236366f1' stroke-width='1' stroke-opacity='0.10' transform='rotate(45 78 60)'/%3E%3C/svg%3E");
+}
+
+/* Everything above the background */
+#root {
+  position: relative;
+  z-index: 1;
 }
 
 @layer components {
@@ -22,7 +59,7 @@ body {
     @apply border-red-400 focus:ring-red-400;
   }
   .btn-primary {
-    @apply w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700
+    @apply w-full bg-[#351159] hover:from-indigo-700 hover:to-purple-700
     text-white font-semibold py-3 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg
     active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
   }
@@ -33,7 +70,7 @@ body {
     @apply text-red-500 text-xs mt-1 flex items-center gap-1;
   }
   .auth-card {
-    @apply bg-white rounded-2xl shadow-xl shadow-gray-200/60 p-8 w-full;
+    @apply bg-white rounded-2xl shadow-xl shadow-gray-200/60 p-5 sm:p-8 w-full;
   }
   .step-badge {
     @apply inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-600 text-xs font-semibold px-3 py-1 rounded-full mb-4;

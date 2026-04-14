@@ -78,7 +78,7 @@ export default function EmailOtpVerify() {
 
         {/* OTP boxes */}
         <div>
-          <div className="flex justify-between gap-2" onPaste={handlePaste}>
+          <div className="flex justify-between gap-1.5 sm:gap-2" onPaste={handlePaste}>
             {otp.map((digit, idx) => (
               <input
                 key={idx}
@@ -86,7 +86,7 @@ export default function EmailOtpVerify() {
                 type="text" inputMode="numeric" maxLength={1} value={digit}
                 onChange={(e) => handleChange(e.target.value, idx)}
                 onKeyDown={(e) => handleKeyDown(e, idx)}
-                className={`w-12 h-14 text-center text-xl font-bold border-2 rounded-xl
+                className={`w-10 h-12 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-bold border-2 rounded-xl
                   focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200
                   transition-all duration-200 bg-gray-50
                   ${digit ? 'border-indigo-400 bg-indigo-50 text-indigo-700' : 'border-gray-200'}

@@ -114,12 +114,12 @@ export default function ForgotPassword() {
   const Logo = () => (
     <div className="text-center mb-8">
       <div className="inline-flex items-center gap-2 mb-2">
-        <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+        <div className="w-10 h-10 bg-[#351159] rounded-xl flex items-center justify-center shadow-lg">
           <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         </div>
-        <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">E-Notary</span>
+        <span className="text-2xl font-bold bg-[#351159] bg-clip-text text-transparent">E-Notary</span>
       </div>
     </div>
   )
@@ -169,13 +169,13 @@ export default function ForgotPassword() {
                 {/* OTP */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Enter OTP</label>
-                  <div className="flex justify-between gap-2" onPaste={handleOtpPaste}>
+                  <div className="flex justify-between gap-1.5 sm:gap-2" onPaste={handleOtpPaste}>
                     {otp.map((digit, idx) => (
                       <input key={idx} ref={(el) => (inputs.current[idx] = el)}
                         type="text" inputMode="numeric" maxLength={1} value={digit}
                         onChange={(e) => handleOtpChange(e.target.value, idx)}
                         onKeyDown={(e) => handleOtpKey(e, idx)}
-                        className={`w-12 h-14 text-center text-xl font-bold border-2 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all bg-gray-50
+                        className={`w-10 h-12 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-bold border-2 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all bg-gray-50
                           ${digit ? 'border-indigo-400 bg-indigo-50 text-indigo-700' : 'border-gray-200'}
                           ${errors.otp ? 'border-red-400 bg-red-50' : ''}`}
                       />

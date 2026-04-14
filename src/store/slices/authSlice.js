@@ -167,12 +167,12 @@ export const confirmPassword = createAsyncThunk(
 // Login User
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
-  async ({ email, password }, { rejectWithValue }) => {
+  async ({ email, password, role }, { rejectWithValue }) => {
     try {
       const res = await fetch(`${BASE_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, role }),
       })
       const data = await res.json()
       if (!res.ok) return rejectWithValue(data.message || 'Login failed')
@@ -211,8 +211,8 @@ const authSlice = createSlice({
     // loginUser
     loginStatus: 'idle',
     loginError: null,
-    token: null,
-    user: null,
+    token: localStorage.getItem('token') ?? null,
+    user: JSON.parse(localStorage.getItem('user')) ?? null,
     // forgotPassword
     forgotOtpStatus: 'idle',
     forgotOtpError: null,
@@ -229,7 +229,13 @@ const authSlice = createSlice({
     resetUploadDocs: (state) => { state.uploadDocsStatus = 'idle'; state.uploadDocsError = null },
     resetRegister: (state) => { state.registerStatus = 'idle'; state.registerError = null },
     resetLogin: (state) => { state.loginStatus = 'idle'; state.loginError = null },
-    logout: (state) => { state.token = null; state.user = null; state.loginStatus = 'idle' },
+    logout: (state) => {
+      state.token = null
+      state.user = null
+      state.loginStatus = 'idle'
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+    },
     resetForgotOtp: (state) => { state.forgotOtpStatus = 'idle'; state.forgotOtpError = null },
     resetConfirmPass: (state) => { state.confirmPassStatus = 'idle'; state.confirmPassError = null },
   },
@@ -324,6 +330,8 @@ const authSlice = createSlice({
         state.loginStatus = 'succeeded'
         state.token = action.payload.token ?? null
         state.user = action.payload.user ?? null
+        if (action.payload.token) localStorage.setItem('token', action.payload.token)
+        if (action.payload.user) localStorage.setItem('user', JSON.stringify(action.payload.user))
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loginStatus = 'failed'
