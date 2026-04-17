@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { sendPhoneOtp, resetSendPhoneOtp, verifyPhoneOtp, resetVerifyPhoneOtp } from '../store/slices/authSlice'
 import AuthLayout from '../components/AuthLayout'
@@ -13,6 +13,8 @@ export default function MobileVerify() {
   const inputs = useRef([])
   const navigate = useNavigate()
   const dispatch = useDispatch()
+  const { state } = useLocation()
+  const redirect = state?.redirect || null
 
   const { sendPhoneOtpStatus, sendPhoneOtpError, verifyPhoneOtpStatus, verifyPhoneOtpError } = useSelector((state) => state.auth)
   const loading = sendPhoneOtpStatus === 'loading'
@@ -22,7 +24,7 @@ export default function MobileVerify() {
   useEffect(() => {
     if (verifyPhoneOtpStatus === 'succeeded') {
       dispatch(resetVerifyPhoneOtp())
-      navigate('/upload-documents')
+      navigate('/upload-documents', { state: { redirect } })
     }
   }, [verifyPhoneOtpStatus])
 

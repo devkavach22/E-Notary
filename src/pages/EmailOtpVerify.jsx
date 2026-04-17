@@ -14,6 +14,7 @@ export default function EmailOtpVerify() {
   const dispatch = useDispatch()
 
   const email = useSelector((s) => s.auth.email) || state?.email || ''
+  const redirect = state?.redirect || null
   const { verifyOtpStatus, verifyOtpError } = useSelector((s) => s.auth)
   const loading = verifyOtpStatus === 'loading'
 
@@ -27,7 +28,7 @@ export default function EmailOtpVerify() {
   useEffect(() => {
     if (verifyOtpStatus === 'succeeded') {
       dispatch(resetVerifyOtp())
-      navigate('/verify-mobile')
+      navigate('/verify-mobile', { state: { redirect } })
     }
   }, [verifyOtpStatus])
 

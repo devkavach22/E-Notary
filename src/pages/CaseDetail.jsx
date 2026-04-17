@@ -2,6 +2,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { resubmitCase, signDocument } from '../store/slices/caseSlice'
 import BackButton from '../components/common/BackButton'
 import ESignModal from '../components/cases/ESignModal'
+import CoApplicantInvite from '../components/cases/CoApplicantInvite'
 import { useState } from 'react'
 import { toast } from 'react-toastify'
 
@@ -37,7 +38,7 @@ export default function CaseDetail({ caseId, onBack, onDownload }) {
   }
 
   return (
-    <div className="space-y-5 max-w-2xl">
+    <div className="space-y-5 max-w-2xl w-full pb-10">
       <BackButton onClick={onBack} label="Back to Cases" />
 
       {/* Header */}
@@ -135,6 +136,25 @@ export default function CaseDetail({ caseId, onBack, onDownload }) {
       )}
 
       {showSign && <ESignModal onClose={() => setShowSign(false)} onSign={handleSign} />}
+
+      {/* Co-applicants section — shown for multi-party cases */}
+      {caseData.isMultiParty && (
+        <CoApplicantInvite
+          caseId={caseData.id}
+          coApplicants={caseData.coApplicants ?? []}
+        />
+      )}
+
+      {/* Enable multi-party for single-party cases */}
+      {!caseData.isMultiParty && (
+        <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-5 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-gray-700">Multi-party case?</p>
+            <p className="text-xs text-gray-400 mt-0.5">Invite a co-applicant (spouse, partner, buyer etc.) to fill their details</p>
+          </div>
+          <CoApplicantInvite caseId={caseData.id} coApplicants={[]} showAddOnly />
+        </div>
+      )}
     </div>
   )
 }

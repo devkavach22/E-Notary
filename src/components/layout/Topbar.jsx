@@ -14,8 +14,8 @@ export default function Topbar({ activeNav, setSidebarOpen, selectedTemplate, di
     activeNav === 'booking-detail' ? 'Booking Details' :
     activeNav === 'upload-case-docs' ? 'Upload Documents' :
     activeNav === 'cases' ? 'My Cases' :
-    activeNav === 'case-detail' ? 'Case Details' :
     activeNav === 'notifications' ? 'Notifications' :
+    activeNav === 'payment' ? 'Payment' :
     navItems.find(n => n.key === activeNav)?.label ?? 'Dashboard'
 
   return (

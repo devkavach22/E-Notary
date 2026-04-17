@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { logout } from '../store/slices/authSlice'
 import { fetchAdvocates, fetchPracticeAreas, fetchAdvocateTemplates, resetTemplates, fillTemplate, downloadTemplate } from '../store/slices/advocateSlice'
 
@@ -20,6 +20,8 @@ import UploadCaseDocs from './UploadCaseDocs'
 import MyCases from './MyCases'
 import CaseDetail from './CaseDetail'
 import Notifications from './Notifications'
+import PaymentPage from './PaymentPage'
+import InvitedCases from './InvitedCases'
 
 const USER_FIELD_MAP = {
   'full name': 'fullName', 'name': 'fullName',
@@ -47,6 +49,13 @@ export default function Dashboard() {
 
   const [activeNav, setActiveNav] = useState('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [searchParams] = useSearchParams()
+
+  // Support ?nav=invited-cases redirect from join-case flow
+  useEffect(() => {
+    const nav = searchParams.get('nav')
+    if (nav) setActiveNav(nav)
+  }, [])
   const [caseType, setCaseType] = useState('')
   const [category, setCategory] = useState('')
   const [selectedTemplate, setSelectedTemplate] = useState(null)
@@ -54,6 +63,7 @@ export default function Dashboard() {
   const [formErrors, setFormErrors] = useState({})
   const [selectedBookingId, setSelectedBookingId] = useState(null)
   const [selectedCaseId, setSelectedCaseId] = useState(null)
+  const [isPaid, setIsPaid] = useState(false)
 
   const categoryOptions = practiceGroups.find((g) => g.group === caseType)?.areas ?? []
 
@@ -116,7 +126,7 @@ export default function Dashboard() {
       value: formValues[f.fieldName] ?? '',
     }))
     dispatch(fillTemplate({ templateId: selectedTemplate._id, filledFields })).then(res => {
-      if (fillTemplate.fulfilled.match(res)) setActiveNav('stamp')
+      if (fillTemplate.fulfilled.match(res)) { setIsPaid(false); setActiveNav('stamp') }
     })
   }
 
@@ -219,6 +229,17 @@ export default function Dashboard() {
               downloadStatus={downloadStatus}
               submissionId={submissionId}
               submissionStatus={submissionStatus}
+              paid={isPaid}
+              onProceedPayment={() => setActiveNav('payment')}
+            />
+          )}
+
+          {activeNav === 'payment' && selectedTemplate && (
+            <PaymentPage
+              selectedTemplate={selectedTemplate}
+              templatesMeta={{ ...templatesMeta, fee: selectedTemplate.perDocumentFee ?? 500 }}
+              onBack={() => setActiveNav('stamp')}
+              onSuccess={() => { setIsPaid(true); setActiveNav('stamp') }}
             />
           )}
 
@@ -254,6 +275,10 @@ export default function Dashboard() {
 
           {activeNav === 'notifications' && (
             <Notifications onViewCase={(id) => { setSelectedCaseId(id); setActiveNav('case-detail') }} />
+          )}
+
+          {activeNav === 'invited-cases' && (
+            <InvitedCases />
           )}
 
           {activeNav === 'profile' && user && (

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { uploadDocuments, resetUploadDocs } from '../store/slices/authSlice'
 import AuthLayout from '../components/AuthLayout'
@@ -70,6 +70,8 @@ export default function UploadDocuments() {
   const [errors, setErrors] = useState({})
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const { state } = useLocation()
+  const redirect = state?.redirect || null
 
   const { uploadDocsStatus } = useSelector((s) => s.auth)
   const loading = uploadDocsStatus === 'loading'
@@ -77,7 +79,7 @@ export default function UploadDocuments() {
   useEffect(() => {
     if (uploadDocsStatus === 'succeeded') {
       dispatch(resetUploadDocs())
-      navigate('/register')
+      navigate('/register', { state: { redirect } })
     }
   }, [uploadDocsStatus])
 

@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { loginUser, resetLogin } from '../store/slices/authSlice'
-import AuthLayout from '../components/AuthLayout'
 
 export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' })
@@ -10,14 +9,16 @@ export default function Login() {
   const [showPass, setShowPass] = useState(false)
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const redirect = searchParams.get('redirect')
 
-  const { loginStatus, loginError } = useSelector((s) => s.auth)
+  const { loginStatus } = useSelector((s) => s.auth)
   const loading = loginStatus === 'loading'
 
   useEffect(() => {
     if (loginStatus === 'succeeded') {
       dispatch(resetLogin())
-      navigate('/dashboard') // change to your post-login route
+      navigate(redirect ? decodeURIComponent(redirect) : '/dashboard')
     }
   }, [loginStatus])
 
@@ -116,7 +117,10 @@ export default function Login() {
 
           <p className="text-center text-sm text-gray-500 mt-5">
             Don't have an account?{' '}
-            <span onClick={() => navigate('/verify-email')} className="text-indigo-600 font-medium cursor-pointer hover:underline">Register now</span>
+            <span
+              onClick={() => navigate(redirect ? `/verify-email?redirect=${redirect}` : '/verify-email')}
+              className="text-indigo-600 font-medium cursor-pointer hover:underline"
+            >Register now</span>
           </p>
         </div>
       </div>

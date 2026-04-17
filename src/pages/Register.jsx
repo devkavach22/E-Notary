@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { registerUser, resetRegister } from '../store/slices/authSlice'
 import AuthLayout from '../components/AuthLayout'
@@ -28,6 +28,8 @@ function splitName(fullName = '') {
 export default function Register() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
+  const { state } = useLocation()
+  const redirect = state?.redirect || null
   const extractedData = useSelector((s) => s.auth.extractedData)
   const storedEmail = useSelector((s) => s.auth.email)
   const filePaths = useSelector((s) => s.auth.filePaths)
@@ -114,7 +116,7 @@ export default function Register() {
     dispatch(registerUser(fd)).then((res) => {
       if (res.meta.requestStatus === 'fulfilled') {
         dispatch(resetRegister())
-        navigate('/login')
+        navigate(redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : '/login')
       }
     })
   }

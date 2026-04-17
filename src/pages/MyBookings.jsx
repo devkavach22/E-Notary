@@ -4,6 +4,7 @@ import Badge from '../components/common/Badge'
 
 export default function MyBookings({ onViewBooking }) {
   const bookings = useSelector(s => s.case.bookings)
+  
 
   const statusColor = {
     confirmed: 'indigo',

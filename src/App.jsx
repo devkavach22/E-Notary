@@ -10,6 +10,7 @@ import Login from './pages/Login'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import Dashboard from './pages/Dashboard'
+import JoinCase from './pages/JoinCase'
 import ProtectedRoute from './components/ProtectedRoute'
 
 export default function App() {
@@ -35,10 +36,11 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/join-case" element={<JoinCase />} />
         <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
         } />
       </Routes>
     </BrowserRouter>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { sendEmailOtp, setEmail, resetSendOtp } from '../store/slices/authSlice'
 import AuthLayout from '../components/AuthLayout'
@@ -9,6 +9,8 @@ export default function EmailVerify() {
   const [validationError, setValidationError] = useState('')
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const redirect = searchParams.get('redirect')
 
   const { sendOtpStatus, sendOtpError } = useSelector((state) => state.auth)
 
@@ -18,7 +20,7 @@ export default function EmailVerify() {
   useEffect(() => {
     if (sendOtpStatus === 'succeeded') {
       dispatch(resetSendOtp())
-      navigate('/verify-email-otp', { state: { email: emailInput } })
+      navigate('/verify-email-otp', { state: { email: emailInput, redirect } })
     }
   }, [sendOtpStatus])
 
@@ -88,7 +90,10 @@ export default function EmailVerify() {
 
         <p className="text-center text-sm text-gray-500">
           Already have an account?{' '}
-          <span onClick={() => navigate('/login')} className="text-indigo-600 font-medium cursor-pointer hover:underline">
+          <span
+            onClick={() => navigate(redirect ? `/login?redirect=${redirect}` : '/login')}
+            className="text-indigo-600 font-medium cursor-pointer hover:underline"
+          >
             Login
           </span>
         </p>

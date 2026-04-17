@@ -46,6 +46,19 @@ const MOCK_CASES = [
     category: 'Sale Deed',
     title: 'Property Sale Deed Notarization',
     currentStage: 'document_review',
+    isMultiParty: true,
+    coApplicants: [
+      {
+        id: 'cop1',
+        role: 'Second Party (Buyer)',
+        email: '',
+        mobile: '',
+        token: 'TOKEN-CASE001-A',
+        status: 'pending',
+        fields: {},
+        invitedAt: null,
+      },
+    ],
     stages: [
       { key: 'booked', label: 'Appointment Booked', completedAt: '2026-04-10T10:00:00Z', status: 'done' },
       { key: 'consultation', label: 'Video Consultation', completedAt: '2026-04-11T11:00:00Z', status: 'done' },
@@ -68,6 +81,8 @@ const MOCK_CASES = [
     category: 'Affidavit',
     title: 'Name Change Affidavit',
     currentStage: 'rejected',
+    isMultiParty: false,
+    coApplicants: [],
     stages: [
       { key: 'booked', label: 'Appointment Booked', completedAt: '2026-04-12T14:00:00Z', status: 'done' },
       { key: 'consultation', label: 'Video Consultation', completedAt: '2026-04-13T10:00:00Z', status: 'done' },
@@ -90,6 +105,19 @@ const MOCK_CASES = [
     category: 'Partnership Deed',
     title: 'Business Partnership Deed',
     currentStage: 'completed',
+    isMultiParty: true,
+    coApplicants: [
+      {
+        id: 'cop2',
+        role: 'Second Partner',
+        email: 'partner@example.com',
+        mobile: '',
+        token: 'TOKEN-CASE003-A',
+        status: 'submitted',
+        fields: { 'Partner Name': 'Vikram Shah', 'Share Percentage': '50%' },
+        invitedAt: '2026-04-02T10:00:00Z',
+      },
+    ],
     stages: [
       { key: 'booked', label: 'Appointment Booked', completedAt: '2026-04-01T10:00:00Z', status: 'done' },
       { key: 'consultation', label: 'Video Consultation', completedAt: '2026-04-02T11:00:00Z', status: 'done' },
@@ -192,8 +220,67 @@ const caseSlice = createSlice({
         })
       }
     },
+    sendCoApplicantInvite: (state, action) => {
+      // action.payload = { caseId, coApplicantId, email, mobile }
+      const { caseId, coApplicantId, email, mobile } = action.payload
+      const c = state.cases.find(c => c.id === caseId)
+      if (!c) return
+      const cop = c.coApplicants.find(p => p.id === coApplicantId)
+      if (cop) {
+        cop.email = email || cop.email
+        cop.mobile = mobile || cop.mobile
+        cop.invitedAt = new Date().toISOString()
+        cop.status = 'invited'
+      }
+      state.notifications.unshift({
+        id: `n${Date.now()}`,
+        type: 'stage_change',
+        message: `Co-applicant invite sent for case ${caseId}.`,
+        read: false,
+        createdAt: new Date().toISOString(),
+        caseId,
+      })
+    },
+    submitCoApplicantForm: (state, action) => {
+      // action.payload = { token, fields }
+      const { token, fields } = action.payload
+      for (const c of state.cases) {
+        const cop = c.coApplicants?.find(p => p.token === token)
+        if (cop) {
+          cop.fields = fields
+          cop.status = 'submitted'
+          state.notifications.unshift({
+            id: `n${Date.now()}`,
+            type: 'stage_change',
+            message: `Co-applicant has submitted their details for case ${c.id}.`,
+            read: false,
+            createdAt: new Date().toISOString(),
+            caseId: c.id,
+          })
+          break
+        }
+      }
+    },
+    addCoApplicant: (state, action) => {
+      // action.payload = { caseId, role }
+      const { caseId, role } = action.payload
+      const c = state.cases.find(c => c.id === caseId)
+      if (c) {
+        c.isMultiParty = true
+        c.coApplicants.push({
+          id: `cop${Date.now()}`,
+          role: role || 'Co-Applicant',
+          email: '',
+          mobile: '',
+          token: `TOKEN-${caseId}-${Date.now()}`,
+          status: 'pending',
+          fields: {},
+          invitedAt: null,
+        })
+      }
+    },
   },
 })
 
-export const { addBooking, markNotificationRead, markAllRead, setSelectedCase, setSelectedBooking, uploadDocumentForBooking, resubmitCase, signDocument } = caseSlice.actions
+export const { addBooking, markNotificationRead, markAllRead, setSelectedCase, setSelectedBooking, uploadDocumentForBooking, resubmitCase, signDocument, sendCoApplicantInvite, submitCoApplicantForm, addCoApplicant } = caseSlice.actions
 export default caseSlice.reducer

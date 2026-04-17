@@ -2,7 +2,7 @@ const actions = [
   { icon: '🔍', label: 'Find an Advocate', desc: 'Browse and filter verified advocates', nav: 'advocates' },
   { icon: '📅', label: 'My Bookings', desc: 'View and manage your appointments', nav: 'bookings' },
   { icon: '📁', label: 'My Cases', desc: 'Track your case stages in real time', nav: 'cases' },
-  { icon: '🔔', label: 'Notifications', desc: 'Stay updated on case changes', nav: 'notifications' },
+  // { icon: '🔔', label: 'Notifications', desc: 'Stay updated on case changes', nav: 'notifications' },
 ]
 
 export default function QuickActions({ onNavigate }) {
