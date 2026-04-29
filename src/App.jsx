@@ -6,6 +6,7 @@ import EmailOtpVerify from './pages/EmailOtpVerify'
 import MobileVerify from './pages/MobileVerify'
 import UploadDocuments from './pages/UploadDocuments'
 import Register from './pages/Register'
+import CompanyRegister from './pages/CompanyRegister'
 import Login from './pages/Login'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="/verify-mobile" element={<MobileVerify />} />
         <Route path="/upload-documents" element={<UploadDocuments />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/register-company" element={<CompanyRegister />} />
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />

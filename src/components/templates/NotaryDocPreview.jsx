@@ -1,4 +1,25 @@
 // Indian Non-Judicial Stamp Paper — pixel-perfect, govType-aware
+
+function renderLayout(layout, formValues, dateStrLong) {
+  if (!layout) return ''
+  const today = new Date()
+  const dateStr = today.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  let html = layout
+  // Replace {{Date}} and {{Place}} special tokens
+  html = html.replace(/\{\{Date\}\}/g, dateStrLong || dateStr)
+  html = html.replace(/\{\{Place\}\}/g, formValues?.['Place'] || formValues?.['place'] || '___________')
+  // Replace all {{Key}} placeholders from formValues
+  if (formValues) {
+    Object.entries(formValues).forEach(([key, value]) => {
+      const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      html = html.replace(new RegExp(`\\{\\{${escaped}\\}\\}`, 'g'), value || `<span style="display:inline-block;min-width:80px;border-bottom:1px solid #999;">&nbsp;</span>`)
+    })
+  }
+  // Replace any remaining unfilled placeholders with blank underline
+  html = html.replace(/\{\{[^}]+\}\}/g, '<span style="display:inline-block;min-width:80px;border-bottom:1px solid #999;">&nbsp;</span>')
+  return html
+}
+
 export default function NotaryDocPreview({
   selectedTemplate, formValues, templatesMeta,
   preview = false, paid = false, signatureData = null,
@@ -32,16 +53,8 @@ export default function NotaryDocPreview({
     return key ? (formValues[key] || '') : ''
   }
 
-  const fullName   = val('full name') || val('name') || ''
-  const fatherName = val("father's / husband's name") || ''
-  const address    = val('address') || ''
-  const city       = val('city') || 'Delhi'
-  const state      = val('state') || 'Delhi'
-
-  const blank = (text, width = 140) =>
-    text
-      ? <span style={{ fontWeight: 700, color: '#111' }}>{text}</span>
-      : <span style={{ display: 'inline-block', borderBottom: '1px solid #666', minWidth: width, height: '1em', verticalAlign: 'bottom' }} />
+  const city  = val('city') || 'Delhi'
+  const state = val('state') || 'Delhi'
 
   const s = (n) => preview ? Math.round(n * 0.62) : n
 
@@ -244,61 +257,14 @@ export default function NotaryDocPreview({
         background: '#fff', lineHeight: 1.85,
         fontSize: s(12), color: '#111', fontFamily: 'Georgia, serif'
       }}>
-        <div style={{ textAlign: 'center', marginBottom: s(14) }}>
-          <div style={{ fontWeight: 900, fontSize: s(15), textDecoration: 'underline', textTransform: 'uppercase', letterSpacing: 2 }}>
-            {selectedTemplate?.caseType || 'AFFIDAVIT'}
-          </div>
-          {selectedTemplate?.title && (
-            <div style={{ fontSize: s(11), color: '#555', marginTop: s(3) }}>{selectedTemplate.title}</div>
-          )}
-        </div>
-
-        <p style={{ marginBottom: s(10) }}>
-          THIS DOCUMENT is made and executed at {blank(city, 90)} on <strong>{dateStrLong}</strong> by:
-        </p>
-        <p style={{ marginBottom: s(10) }}>
-          <strong>{blank(fullName, 180)}</strong>
-          {fatherName && <>, S/o / D/o / W/o <strong>{blank(fatherName, 160)}</strong></>},
-          residing at {blank(address, 220)},
-          hereinafter referred to as the <strong>"Applicant"</strong>.
-        </p>
-        <p style={{ marginBottom: s(8) }}>The Applicant hereby solemnly affirms and declares as under:</p>
-
-        <ol style={{ paddingLeft: s(20), marginBottom: s(10) }}>
-          {selectedTemplate?.fields?.map((f) => (
-            <li key={f.fieldName} style={{ marginBottom: s(6) }}>
-              That the <strong>{f.fieldName}</strong> of the Applicant is {blank(formValues?.[f.fieldName], 140)}.
-            </li>
-          ))}
-          {(!selectedTemplate?.fields || selectedTemplate.fields.length === 0) && (
-            <>
-              <li style={{ marginBottom: s(6) }}>That the contents of this document are true and correct to the best of my knowledge and belief.</li>
-              <li style={{ marginBottom: s(6) }}>That nothing has been concealed therein.</li>
-              <li>That this affidavit is being made for official and legal purposes only.</li>
-            </>
-          )}
-        </ol>
-
-        <p style={{ marginBottom: s(10) }}>
-          <strong>VERIFICATION:</strong> Verified at {blank(city, 80)} that the contents of the above document are true and correct to the best of my knowledge and belief and nothing is wrong therein.
-        </p>
-        <p>Dated: <strong>{dateStrLong}</strong></p>
-
-        {/* Signatures */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: s(24) }}>
-          <div style={{ textAlign: 'center' }}>
-            {signatureData
-              ? <img src={signatureData} alt="sig" style={{ height: s(40), marginBottom: s(4) }} />
-              : <div style={{ width: s(130), borderBottom: '1px solid #555', height: s(36), marginBottom: s(4) }} />
-            }
-            <div style={{ fontSize: s(9), color: '#555' }}>Applicant's Signature</div>
-            {fullName && <div style={{ fontSize: s(9), fontWeight: 700 }}>{fullName}</div>}
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ width: s(130), borderBottom: '1px solid #555', height: s(36), marginBottom: s(4) }} />
-            <div style={{ fontSize: s(9), color: '#555' }}>Witness Signature</div>
-          </div>
-        </div>
+        {selectedTemplate?.templateLayout
+          ? <div
+              className="template-body"
+              style={{ fontSize: s(12) }}
+              dangerouslySetInnerHTML={{ __html: renderLayout(selectedTemplate.templateLayout, formValues, dateStrLong) }}
+            />
+          : <p style={{ color: '#aaa', textAlign: 'center' }}>No template content available.</p>
+        }
 
         {/* Notary stamp */}
         <div style={{ marginTop: s(20), display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>

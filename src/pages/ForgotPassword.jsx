@@ -63,7 +63,7 @@ export default function ForgotPassword() {
     if (!email.trim()) { setErrors({ email: 'Email is required' }); return }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setErrors({ email: 'Enter a valid email' }); return }
     setErrors({})
-    dispatch(sendForgotOtp(email))
+    dispatch(sendForgotOtp({ email, role: 'user' }))
   }
 
   const handleOtpChange = (val, idx) => {
@@ -184,7 +184,7 @@ export default function ForgotPassword() {
                   <ErrMsg msg={errors.otp} />
                   <p className="text-xs text-gray-400 mt-2">
                     {resendTimer > 0 ? `Resend in ${resendTimer}s` :
-                      <span onClick={() => { setOtp(['','','','','','']); dispatch(sendForgotOtp(email)); setResendTimer(30) }}
+                      <span onClick={() => { setOtp(['','','','','','']); dispatch(sendForgotOtp({ email, role: 'user' })); setResendTimer(30) }}
                         className="text-indigo-600 cursor-pointer hover:underline font-medium">Resend OTP</span>}
                   </p>
                 </div>

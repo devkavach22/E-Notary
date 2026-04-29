@@ -124,15 +124,34 @@ export const registerUser = createAsyncThunk(
   }
 )
 
+// Register Company
+export const registerCompany = createAsyncThunk(
+  'auth/registerCompany',
+  async (formData, { rejectWithValue }) => {
+    try {
+      const res = await fetch(`${BASE_URL}/company/register`, {
+        method: 'POST',
+        body: formData, // FormData with all company fields
+      })
+      const data = await res.json()
+      if (!res.ok) return rejectWithValue(data.message || 'Company registration failed')
+      toast.success(data.message || 'Company registration successful')
+      return data
+    } catch (err) {
+      return rejectWithValue('Network error. Please try again.')
+    }
+  }
+)
+
 // Send Forget Password OTP
 export const sendForgotOtp = createAsyncThunk(
   'auth/sendForgotOtp',
-  async (email, { rejectWithValue }) => {
+  async ({ email, role }, { rejectWithValue }) => {
     try {
       const res = await fetch(`${BASE_URL}/send-forget-password-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, role }),
       })
       const data = await res.json()
       if (!res.ok) return rejectWithValue(data.message || 'Failed to send OTP')
@@ -164,6 +183,48 @@ export const confirmPassword = createAsyncThunk(
   }
 )
 
+// Update User Profile
+export const updateProfile = createAsyncThunk(
+  'auth/updateProfile',
+  async (payload, { getState, rejectWithValue }) => {
+    try {
+      const token = getState().auth.token
+      const res = await fetch(`${BASE_URL}/user/profile/edit`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `${token}`,
+        },
+        body: JSON.stringify(payload),
+      })
+      const data = await res.json()
+      if (!res.ok) return rejectWithValue(data.message || 'Failed to update profile')
+      toast.success(data.message || 'Profile updated successfully')
+      return data.data
+    } catch (err) {
+      return rejectWithValue('Network error. Please try again.')
+    }
+  }
+)
+
+// Fetch User Profile
+export const fetchProfile = createAsyncThunk(
+  'auth/fetchProfile',
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const token = getState().auth.token
+      const res = await fetch(`${BASE_URL}/user/profile`, {
+        headers: { Authorization: `${token}` },
+      })
+      const data = await res.json()
+      if (!res.ok) return rejectWithValue(data.message || 'Failed to fetch profile')
+      return data.data
+    } catch (err) {
+      return rejectWithValue('Network error. Please try again.')
+    }
+  }
+)
+
 // Login User
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
@@ -188,6 +249,7 @@ const authSlice = createSlice({
   name: 'auth',
   initialState: {
     email: '',
+    registerType: 'individual', // 'individual' | 'company'
     // sendEmailOtp
     sendOtpStatus: 'idle',
     sendOtpError: null,
@@ -208,6 +270,9 @@ const authSlice = createSlice({
     // registerUser
     registerStatus: 'idle',
     registerError: null,
+    // registerCompany
+    registerCompanyStatus: 'idle',
+    registerCompanyError: null,
     // loginUser
     loginStatus: 'idle',
     loginError: null,
@@ -219,15 +284,22 @@ const authSlice = createSlice({
     // confirmPassword
     confirmPassStatus: 'idle',
     confirmPassError: null,
+    // profile
+    profileStatus: 'idle',
+    // updateProfile
+    updateProfileStatus: 'idle',
+    updateProfileError: null,
   },
   reducers: {
     setEmail: (state, action) => { state.email = action.payload },
+    setRegisterType: (state, action) => { state.registerType = action.payload },
     resetSendOtp: (state) => { state.sendOtpStatus = 'idle'; state.sendOtpError = null },
     resetVerifyOtp: (state) => { state.verifyOtpStatus = 'idle'; state.verifyOtpError = null },
     resetSendPhoneOtp: (state) => { state.sendPhoneOtpStatus = 'idle'; state.sendPhoneOtpError = null },
     resetVerifyPhoneOtp: (state) => { state.verifyPhoneOtpStatus = 'idle'; state.verifyPhoneOtpError = null },
     resetUploadDocs: (state) => { state.uploadDocsStatus = 'idle'; state.uploadDocsError = null },
     resetRegister: (state) => { state.registerStatus = 'idle'; state.registerError = null },
+    resetRegisterCompany: (state) => { state.registerCompanyStatus = 'idle'; state.registerCompanyError = null },
     resetLogin: (state) => { state.loginStatus = 'idle'; state.loginError = null },
     logout: (state) => {
       state.token = null
@@ -238,6 +310,7 @@ const authSlice = createSlice({
     },
     resetForgotOtp: (state) => { state.forgotOtpStatus = 'idle'; state.forgotOtpError = null },
     resetConfirmPass: (state) => { state.confirmPassStatus = 'idle'; state.confirmPassError = null },
+    resetUpdateProfile: (state) => { state.updateProfileStatus = 'idle'; state.updateProfileError = null },
   },
   extraReducers: (builder) => {
     builder
@@ -321,6 +394,19 @@ const authSlice = createSlice({
         state.registerError = action.payload
         toast.error(action.payload)
       })
+      // registerCompany
+      .addCase(registerCompany.pending, (state) => {
+        state.registerCompanyStatus = 'loading'
+        state.registerCompanyError = null
+      })
+      .addCase(registerCompany.fulfilled, (state) => {
+        state.registerCompanyStatus = 'succeeded'
+      })
+      .addCase(registerCompany.rejected, (state, action) => {
+        state.registerCompanyStatus = 'failed'
+        state.registerCompanyError = action.payload
+        toast.error(action.payload)
+      })
       // loginUser
       .addCase(loginUser.pending, (state) => {
         state.loginStatus = 'loading'
@@ -364,8 +450,37 @@ const authSlice = createSlice({
         state.confirmPassError = action.payload
         toast.error(action.payload)
       })
+      // fetchProfile
+      .addCase(fetchProfile.pending, (state) => {
+        state.profileStatus = 'loading'
+      })
+      .addCase(fetchProfile.fulfilled, (state, action) => {
+        state.profileStatus = 'succeeded'
+        state.user = action.payload
+        localStorage.setItem('user', JSON.stringify(action.payload))
+      })
+      .addCase(fetchProfile.rejected, (state) => {
+        state.profileStatus = 'failed'
+      })
+      // updateProfile
+      .addCase(updateProfile.pending, (state) => {
+        state.updateProfileStatus = 'loading'
+        state.updateProfileError = null
+      })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.updateProfileStatus = 'succeeded'
+        if (action.payload) {
+          state.user = action.payload
+          localStorage.setItem('user', JSON.stringify(action.payload))
+        }
+      })
+      .addCase(updateProfile.rejected, (state, action) => {
+        state.updateProfileStatus = 'failed'
+        state.updateProfileError = action.payload
+        toast.error(action.payload)
+      })
   },
 })
 
-export const { setEmail, resetSendOtp, resetVerifyOtp, resetSendPhoneOtp, resetVerifyPhoneOtp, resetUploadDocs, resetRegister, resetLogin, logout, resetForgotOtp, resetConfirmPass } = authSlice.actions
+export const { setEmail, setRegisterType, resetSendOtp, resetVerifyOtp, resetSendPhoneOtp, resetVerifyPhoneOtp, resetUploadDocs, resetRegister, resetRegisterCompany, resetLogin, logout, resetForgotOtp, resetConfirmPass, resetUpdateProfile } = authSlice.actions
 export default authSlice.reducer

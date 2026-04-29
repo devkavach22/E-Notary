@@ -16,15 +16,19 @@ export default function MobileVerify() {
   const { state } = useLocation()
   const redirect = state?.redirect || null
 
-  const { sendPhoneOtpStatus, sendPhoneOtpError, verifyPhoneOtpStatus, verifyPhoneOtpError } = useSelector((state) => state.auth)
+  const { sendPhoneOtpStatus, sendPhoneOtpError, verifyPhoneOtpStatus, verifyPhoneOtpError, registerType } = useSelector((state) => state.auth)
   const loading = sendPhoneOtpStatus === 'loading'
   const verifying = verifyPhoneOtpStatus === 'loading'
 
-  // Navigate on mobile OTP verified
+  // Navigate on mobile OTP verified — branch by registerType
   useEffect(() => {
     if (verifyPhoneOtpStatus === 'succeeded') {
       dispatch(resetVerifyPhoneOtp())
-      navigate('/upload-documents', { state: { redirect } })
+      if (registerType === 'company') {
+        navigate('/register-company', { state: { redirect } })
+      } else {
+        navigate('/upload-documents', { state: { redirect } })
+      }
     }
   }, [verifyPhoneOtpStatus])
 

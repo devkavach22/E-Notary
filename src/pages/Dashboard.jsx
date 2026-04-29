@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { logout } from '../store/slices/authSlice'
+import { logout, fetchProfile } from '../store/slices/authSlice'
 import { fetchAdvocates, fetchPracticeAreas, fetchAdvocateTemplates, resetTemplates, fillTemplate, downloadTemplate } from '../store/slices/advocateSlice'
 
 import Sidebar from '../components/layout/Sidebar'
@@ -14,6 +14,7 @@ import TemplateList from '../components/templates/TemplateList'
 import TemplateForm from '../components/templates/TemplateForm'
 import StampDocument from '../components/templates/StampDocument'
 import ProfileCard from '../components/profile/ProfileCard'
+import EditProfile from './EditProfile'
 import MyBookings from './MyBookings'
 import BookingDetail from './BookingDetail'
 import UploadCaseDocs from './UploadCaseDocs'
@@ -68,6 +69,7 @@ export default function Dashboard() {
   const categoryOptions = practiceGroups.find((g) => g.group === caseType)?.areas ?? []
 
   useEffect(() => { dispatch(fetchPracticeAreas()) }, [])
+  useEffect(() => { dispatch(fetchProfile()) }, [])
 
   useEffect(() => {
     if (activeNav === 'advocates' && (caseType || category)) {
@@ -91,7 +93,13 @@ export default function Dashboard() {
   const openTemplateForm = (tpl) => {
     const initial = {}
     tpl.fields.forEach((f) => {
-      initial[f.fieldName] = getAutoValue(f.fieldName, templatesMeta.userData)
+      initial[f.fieldName] = f.fieldType === 'file' || f.fieldType === 'image' ? null : getAutoValue(f.fieldName, templatesMeta.userData)
+    })
+    ;(tpl.parties ?? []).forEach((party) => {
+      party.fields.forEach((f) => {
+        const key = `${party.partyName} - ${f.fieldName}`
+        initial[key] = f.fieldType === 'file' || f.fieldType === 'image' ? null : getAutoValue(f.fieldName, templatesMeta.userData)
+      })
     })
     setFormValues(initial)
     setFormErrors({})
@@ -112,19 +120,41 @@ export default function Dashboard() {
   }
 
   const handleFormSubmit = (e) => {
+    console.log("hhhh");
+    
     e.preventDefault()
     const errs = {}
-    selectedTemplate.fields.forEach((f) => {
-      if (f.required && !formValues[f.fieldName]?.toString().trim()) {
+    ;(selectedTemplate.fields ?? []).forEach((f) => {
+      if (f.required && !formValues[f.fieldName]) {
         errs[f.fieldName] = `${f.fieldName} is required`
       }
     })
+    ;(selectedTemplate.parties ?? []).forEach((party) => {
+      party.fields.forEach((f) => {
+        const key = `${party.partyName} - ${f.fieldName}`
+        if (f.required && !formValues[key]) {
+          errs[key] = `${f.fieldName} is required`
+        }
+      })
+    })
     if (Object.keys(errs).length) { setFormErrors(errs); return }
-    const filledFields = selectedTemplate.fields.map((f) => ({
+    // top-level fields
+    const topFields = (selectedTemplate.fields ?? []).map((f) => ({
       fieldName: f.fieldName,
       ...(f.fieldType === 'image' ? { fieldType: 'image' } : {}),
       value: formValues[f.fieldName] ?? '',
     }))
+    // party fields (keyed as "PartyName - fieldName" in formValues)
+    const partyFields = (selectedTemplate.parties ?? []).flatMap((party) =>
+      party.fields.map((f) => ({
+        fieldName: f.fieldName,
+        ...(f.fieldType === 'image' ? { fieldType: 'image' } : {}),
+        value: formValues[`${party.partyName} - ${f.fieldName}`] ?? '',
+      }))
+    )
+    const filledFields = [...topFields, ...partyFields]
+    console.log(filledFields,"filledFields");
+    
     dispatch(fillTemplate({ templateId: selectedTemplate._id, filledFields })).then(res => {
       if (fillTemplate.fulfilled.match(res)) { setIsPaid(false); setActiveNav('stamp') }
     })
@@ -281,8 +311,12 @@ export default function Dashboard() {
             <InvitedCases />
           )}
 
-          {activeNav === 'profile' && user && (
-            <ProfileCard user={user} displayName={displayName} initials={initials} />
+          {activeNav === 'profile' && (
+            <ProfileCard onEdit={() => setActiveNav('edit-profile')} />
+          )}
+
+          {activeNav === 'edit-profile' && (
+            <EditProfile onBack={() => setActiveNav('profile')} />
           )}
 
         </main>

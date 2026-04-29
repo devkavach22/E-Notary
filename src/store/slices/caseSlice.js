@@ -1,4 +1,23 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+
+const BASE_URL = 'http://192.168.11.64:5000/api'
+
+export const fetchMyBookings = createAsyncThunk(
+  'case/fetchMyBookings',
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const token = getState().auth.token
+      const res = await fetch(`${BASE_URL}/user/mybooking`, {
+        headers: { Authorization: `${token}` },
+      })
+      const data = await res.json()
+      if (!res.ok) return rejectWithValue(data.message || 'Failed to fetch bookings')
+      return data.data
+    } catch (err) {
+      return rejectWithValue('Network error. Please try again.')
+    }
+  }
+)
 
 // Mock data for frontend-only development
 const MOCK_BOOKINGS = [
@@ -145,6 +164,8 @@ const caseSlice = createSlice({
   name: 'case',
   initialState: {
     bookings: MOCK_BOOKINGS,
+    bookingsStatus: 'idle',
+    bookingsError: null,
     cases: MOCK_CASES,
     notifications: MOCK_NOTIFICATIONS,
     selectedCaseId: null,
@@ -279,6 +300,21 @@ const caseSlice = createSlice({
         })
       }
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchMyBookings.pending, (state) => {
+        state.bookingsStatus = 'loading'
+        state.bookingsError = null
+      })
+      .addCase(fetchMyBookings.fulfilled, (state, action) => {
+        state.bookingsStatus = 'succeeded'
+        state.bookings = action.payload
+      })
+      .addCase(fetchMyBookings.rejected, (state, action) => {
+        state.bookingsStatus = 'failed'
+        state.bookingsError = action.payload
+      })
   },
 })
 

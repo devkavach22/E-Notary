@@ -1,5 +1,5 @@
 const stats = [
-  { label: 'Total Documents', value: '0', color: 'text-indigo-600', bg: 'bg-indigo-50', icon: '📄' },
+  // { label: 'Total Documents', value: '0', color: 'text-indigo-600', bg: 'bg-indigo-50', icon: '📄' },
   { label: 'Pending', value: '0', color: 'text-amber-600', bg: 'bg-amber-50', icon: '⏳' },
   { label: 'Completed', value: '0', color: 'text-emerald-600', bg: 'bg-emerald-50', icon: '✅' },
   { label: 'Rejected', value: '0', color: 'text-red-500', bg: 'bg-red-50', icon: '❌' },

@@ -2,6 +2,80 @@ import { useState } from 'react'
 import BackButton from '../common/BackButton'
 import NotaryDocPreview from './NotaryDocPreview'
 
+function FieldInput({ f, fieldKey, val, err, isAutoFilled, onChange }) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+        {f.fieldName}
+        {f.required && <span className="text-red-500 ml-0.5">*</span>}
+        {isAutoFilled && <span className="ml-2 text-xs text-emerald-500 font-normal">auto-filled</span>}
+      </label>
+      {f.fieldType === 'textarea' ? (
+        <textarea rows={3} value={val}
+          onChange={e => onChange(fieldKey, e.target.value)}
+          placeholder={f.placeholder || f.fieldName}
+          className={`input-field resize-none ${err ? 'input-error' : ''}`} />
+      ) : f.fieldType === 'date' ? (
+        <input type="date" value={val}
+          onChange={e => onChange(fieldKey, e.target.value)}
+          className={`input-field ${err ? 'input-error' : ''}`} />
+      ) : f.fieldType === 'select' || f.fieldType === 'dropdown' ? (
+        <select value={val}
+          onChange={e => onChange(fieldKey, e.target.value)}
+          className={`input-field ${err ? 'input-error' : ''}`}>
+          <option value="">Select {f.fieldName}</option>
+          {(f.options ?? []).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+        </select>
+      ) : f.fieldType === 'file' ? (
+        <label className={`flex items-center gap-3 cursor-pointer border-2 border-dashed rounded-xl px-4 py-3 transition-colors
+          ${err ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50 hover:border-indigo-400 hover:bg-indigo-50'}`}>
+          <svg className="w-5 h-5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+          </svg>
+          <span className="text-sm text-gray-500 truncate">
+            {val?.name ? val.name : f.placeholder || `Choose file`}
+          </span>
+          <input type="file" className="hidden" accept="*/*"
+            onChange={e => onChange(fieldKey, e.target.files?.[0] ?? null)} />
+        </label>
+      ) : f.fieldType === 'image' ? (
+        <label className={`flex flex-col items-center justify-center gap-2 cursor-pointer border-2 border-dashed rounded-xl px-4 py-5 transition-colors
+          ${err ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50 hover:border-indigo-400 hover:bg-indigo-50'}`}>
+          {val instanceof File ? (
+            <img
+              src={URL.createObjectURL(val)}
+              alt="preview"
+              className="h-24 w-auto rounded-lg object-contain"
+            />
+          ) : (
+            <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          )}
+          <span className="text-xs text-gray-400">
+            {val?.name ? val.name : f.placeholder || 'Click to upload image'}
+          </span>
+          <input type="file" className="hidden" accept="image/*"
+            onChange={e => onChange(fieldKey, e.target.files?.[0] ?? null)} />
+        </label>
+      ) : (
+        <input type={f.fieldType === 'number' ? 'number' : 'text'} value={val ?? ''}
+          onChange={e => onChange(fieldKey, e.target.value)}
+          placeholder={f.placeholder || f.fieldName}
+          className={`input-field ${err ? 'input-error' : ''}`} />
+      )}
+      {err && (
+        <p className="error-msg mt-1">
+          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+          {err}
+        </p>
+      )}
+    </div>
+  )
+}
+
 const GOV_OPTIONS = [
   {
     key: 'central',
@@ -126,53 +200,39 @@ export default function TemplateForm({
             </div>
 
             <form onSubmit={onSubmit} className="space-y-4">
-              {selectedTemplate.fields.map((f) => {
-                const val = formValues[f.fieldName] ?? ''
-                const err = formErrors[f.fieldName]
-                const isAutoFilled = !!getAutoValue(f.fieldName, userData)
+              {/* Top-level fields */}
+              {(selectedTemplate.fields ?? []).map((f) => (
+                <FieldInput
+                  key={f.fieldName}
+                  f={f}
+                  fieldKey={f.fieldName}
+                  val={formValues[f.fieldName] ?? ''}
+                  err={formErrors[f.fieldName]}
+                  isAutoFilled={!!getAutoValue(f.fieldName, userData)}
+                  onChange={onChange}
+                />
+              ))}
 
-                return (
-                  <div key={f.fieldName}>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      {f.fieldName}
-                      {f.required && <span className="text-red-500 ml-0.5">*</span>}
-                      {isAutoFilled && <span className="ml-2 text-xs text-emerald-500 font-normal">auto-filled</span>}
-                    </label>
-
-                    {f.fieldType === 'textarea' ? (
-                      <textarea rows={3} value={val}
-                        onChange={e => onChange(f.fieldName, e.target.value)}
-                        placeholder={f.placeholder || f.fieldName}
-                        className={`input-field resize-none ${err ? 'input-error' : ''}`} />
-                    ) : f.fieldType === 'date' ? (
-                      <input type="date" value={val}
-                        onChange={e => onChange(f.fieldName, e.target.value)}
-                        className={`input-field ${err ? 'input-error' : ''}`} />
-                    ) : f.fieldType === 'select' ? (
-                      <select value={val}
-                        onChange={e => onChange(f.fieldName, e.target.value)}
-                        className={`input-field ${err ? 'input-error' : ''}`}>
-                        <option value="">Select {f.fieldName}</option>
-                        {(f.options ?? []).map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                      </select>
-                    ) : (
-                      <input type={f.fieldType === 'number' ? 'number' : 'text'} value={val}
-                        onChange={e => onChange(f.fieldName, e.target.value)}
-                        placeholder={f.placeholder || f.fieldName}
-                        className={`input-field ${err ? 'input-error' : ''}`} />
-                    )}
-
-                    {err && (
-                      <p className="error-msg mt-1">
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
-                        {err}
-                      </p>
-                    )}
-                  </div>
-                )
-              })}
+              {/* Party sections */}
+              {(selectedTemplate.parties ?? []).map((party) => (
+                <div key={party.partyName} className="border border-gray-100 rounded-xl p-4 space-y-3">
+                  <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wider">{party.partyName}</p>
+                  {party.fields.map((f) => {
+                    const key = `${party.partyName} - ${f.fieldName}`
+                    return (
+                      <FieldInput
+                        key={key}
+                        f={f}
+                        fieldKey={key}
+                        val={formValues[key] ?? ''}
+                        err={formErrors[key]}
+                        isAutoFilled={!!getAutoValue(f.fieldName, userData)}
+                        onChange={onChange}
+                      />
+                    )
+                  })}
+                </div>
+              ))}
 
               <button type="submit" disabled={fillStatus === 'loading'}
                 className="btn-primary py-2.5 text-sm mt-2 flex items-center justify-center gap-2 w-auto px-6">

@@ -25,6 +25,18 @@ function splitName(fullName = '') {
   return { firstName: parts.join(' '), lastName }
 }
 
+const Field = ({ label, name, type = 'text', placeholder, half, form, errors, handle }) => (
+  <div className={half ? '' : 'col-span-2'}>
+    <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
+    <input type={type} name={name} value={form[name]} onChange={handle} placeholder={placeholder}
+      className={`input-field ${errors[name] ? 'input-error' : ''}`} />
+    {errors[name] && <p className="error-msg">
+      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+      {errors[name]}
+    </p>}
+  </div>
+)
+
 export default function Register() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
@@ -112,6 +124,7 @@ export default function Register() {
     fd.append('pincode', form.pincode)
     fd.append('aadhaarFrontPath', filePaths?.aadhaarFront || '')
     fd.append('panCardPath', filePaths?.panCard || '')
+    fd.append('role', 'user')
 
     dispatch(registerUser(fd)).then((res) => {
       if (res.meta.requestStatus === 'fulfilled') {
@@ -121,24 +134,12 @@ export default function Register() {
     })
   }
 
-  const Field = ({ label, name, type = 'text', placeholder, half }) => (
-    <div className={half ? '' : 'col-span-2'}>
-      <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
-      <input type={type} name={name} value={form[name]} onChange={handle} placeholder={placeholder}
-        className={`input-field ${errors[name] ? 'input-error' : ''}`} />
-      {errors[name] && <p className="error-msg">
-        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
-        {errors[name]}
-      </p>}
-    </div>
-  )
-
   return (
     <AuthLayout step={5} totalSteps={5} title="Complete Registration" subtitle="Fill in your personal details to create your account.">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="First Name" name="firstName" placeholder="John" half />
-          <Field label="Last Name / Surname" name="lastName" placeholder="Doe" half />
+          <Field label="First Name" name="firstName" placeholder="John" half form={form} errors={errors} handle={handle} />
+          <Field label="Last Name / Surname" name="lastName" placeholder="Doe" half form={form} errors={errors} handle={handle} />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -158,7 +159,7 @@ export default function Register() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Date of Birth" name="dob" type="date" half />
+          <Field label="Date of Birth" name="dob" type="date" half form={form} errors={errors} handle={handle} />
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Gender</label>
             <select name="gender" value={form.gender} onChange={handle}
@@ -170,7 +171,7 @@ export default function Register() {
           </div>
         </div>
 
-        <Field label="Address" name="address" placeholder="Street address, Area" />
+        <Field label="Address" name="address" placeholder="Street address, Area" form={form} errors={errors} handle={handle} />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[['City','city','Mumbai'],['State','state','Maharashtra'],['Pincode','pincode','400001']].map(([label,name,ph]) => (

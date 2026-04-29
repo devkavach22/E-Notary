@@ -59,20 +59,37 @@ export const fillTemplate = createAsyncThunk(
   async ({ templateId, filledFields }, { rejectWithValue, getState }) => {
     try {
       const token = getState().auth.token
+
+      // Check if any field contains a File — if so, use FormData
+      const hasFile = filledFields.some(f => f.value instanceof File)
+
+      let body, headers
+      if (hasFile) {
+        const fd = new FormData()
+        // Send non-file fields as JSON, files as separate FormData entries
+        const jsonFields = filledFields.map((f, idx) => {
+          if (f.value instanceof File) {
+            fd.append(`file_${idx}`, f.value)
+            return { ...f, value: `__file_${idx}__` }
+          }
+          return f
+        })
+        fd.append('filledFields', JSON.stringify(jsonFields))
+        body = fd
+        headers = { Authorization: `${token}` }
+      } else {
+        body = JSON.stringify({ filledFields })
+        headers = { 'Content-Type': 'application/json', Authorization: `${token}` }
+      }
+
       const res = await fetch(`${BASE_URL}/templates/${templateId}/fill`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `${token}`,
-        },
-        body: JSON.stringify({ filledFields }),
+        headers,
+        body,
       })
       const data = await res.json()
       if (!res.ok) return rejectWithValue(data.message || 'Failed to submit template')
-      toast.success(
-        `${data.message || 'Submitted successfully'} · ID: ${data.data?.submissionId?.slice(-6).toUpperCase()}`,
-        { autoClose: 5000 }
-      )
+      toast.success(`${data.message || 'Submitted successfully'}`, { autoClose: 5000 })
       return data
     } catch (err) {
       return rejectWithValue('Network error. Please try again.')
